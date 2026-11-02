@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Channel Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f2fb;
+      --card: #ffffff;
+      --ink: #1c1230;
+      --muted: #8a7a9e;
+      --line: #ece4f6;
+      --accent: #6d28d9;
+      --accent-2: #8b5cf6;
+      --soft: #efe8fb;
+      --up: #16a34a;
+      --down: #e11d48;
+      --shadow: 0 18px 50px rgba(88, 28, 135, 0.08);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Manrope, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 10% -10%, #e9ddff 0%, transparent 55%),
+        radial-gradient(700px 360px at 100% 0%, #f3e8ff 0%, transparent 50%),
+        var(--bg);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 40px));
+      margin: 32px auto 56px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: -0.04em;
+    }
+
+    .hint { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(109, 40, 217, 0.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    form.panel { padding: 22px 24px 20px; }
+    .form-head {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #5b4a73;
+    }
+    input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #fcfaff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 16px;
+      color: var(--ink);
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+
+    .ghost, .primary {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .ghost { background: var(--soft); color: var(--accent); }
+    .primary {
+      background: linear-gradient(180deg, #8b5cf6, #6d28d9);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(109, 40, 217, 0.25);
+    }
+    .primary:disabled, .ghost:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .error {
+      display: none;
+      margin: 12px 0 0;
+      color: var(--down);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .note {
+      display: none;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .report { padding: 28px 32px 22px; }
+    .empty {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty strong { color: var(--ink); font-weight: 700; }
+
+    .channel-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      object-fit: cover;
+      background: var(--soft);
+      border: 1px solid var(--line);
+    }
+    .channel-meta { min-width: 0; }
+    .channel-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+    .channel-link {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .channel-link:hover { text-decoration: underline; }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 0 0 8px;
+    }
+    .kpi-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-2);
+    }
+    .kpi-value {
+      margin: 8px 0 4px;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-value span { font-size: 14px; font-weight: 600; color: var(--muted); }
+    .kpi-sub { font-size: 13px; font-weight: 600; color: var(--muted); }
+
+    .chart-box { padding: 8px 0 4px; }
+    .chart-title { margin: 0 0 2px; font-size: 14px; font-weight: 700; }
+    .chart-frame { height: 280px; position: relative; }
+    .chart-frame canvas { display: block; }
+
+    .title-block { margin-top: 18px; padding-top: 8px; }
+    .brand {
+      display: inline;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1.1;
+      background-image: linear-gradient(#f3c56b, #f3c56b);
+      background-repeat: no-repeat;
+      background-size: 100% 38%;
+      background-position: 0 78%;
+    }
+    .headline {
+      margin: 10px 0 0;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .tops { margin-top: 22px; }
+    .tops-head {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .video {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+    }
+    .video:first-of-type { border-top: 0; }
+    .rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+    }
+    .video a {
+      color: var(--ink);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .video a:hover { color: var(--accent); }
+    .video-date { margin: 4px 0 0; color: var(--muted); font-size: 12px; font-weight: 600; }
+    .video-views {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 860px) {
+      .form-head, .kpis { grid-template-columns: 1fr; }
+      .brand { font-size: 32px; }
+      .video { grid-template-columns: 28px minmax(0, 1fr); }
+      .video-views { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">youtube</p>
+      <h1>Статистика канала</h1>
+      <p class="hint">Введите @handle, ссылку или название — KPI и график соберутся сами.</p>
+    </header>
+
+    <form class="card panel" id="form">
+      <div class="form-head">
+        <div>
+          <label for="query">Канал</label>
+          <input id="query" name="query" value="@MrBeast" placeholder="@MrBeast или ссылка на канал" required />
+        </div>
+        <div>
+          <button class="primary" type="submit" id="submit">Построить</button>
+        </div>
+      </div>
+      <p class="error" id="error"></p>
+      <p class="note" id="note"></p>
+    </form>
+
+    <section class="card report" id="report">
+      <div class="empty" id="empty">
+        Введите канал и нажмите <strong>Построить</strong>
+      </div>
+      <div id="content" hidden>
+        <div class="channel-row">
+          <img class="avatar" id="avatar" alt="" />
+          <div class="channel-meta">
+            <p class="channel-title" id="channelTitle"></p>
+            <a class="channel-link" id="channelLink" target="_blank" rel="noopener">Открыть на YouTube</a>
+          </div>
+        </div>
+        <div class="kpis" id="kpis"></div>
+        <div class="chart-box">
+          <p class="chart-title">Просмотры роликов по месяцам выхода</p>
+          <div class="chart-frame"><canvas id="chart"></canvas></div>
+        </div>
+        <div class="title-block">
+          <span class="brand" id="brand"></span>
+          <p class="headline" id="headline"></p>
+        </div>
+        <div class="tops">
+          <p class="tops-head">Топ роликов по просмотрам</p>
+          <div id="tops"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const errorEl = document.getElementById("error");
+    const noteEl = document.getElementById("note");
+    const submitEl = document.getElementById("submit");
+    const emptyEl = document.getElementById("empty");
+    const contentEl = document.getElementById("content");
+    let chart;
+
+    function compact(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const fmt = (v, suffix) => {
+        const s = v.toFixed(v >= 10 ? 0 : 1).replace(".", ",");
+        return [s.replace(/,0$/, ""), suffix];
+      };
+      if (abs >= 1e9) return fmt(n / 1e9, "млрд");
+      if (abs >= 1e6) return fmt(n / 1e6, "млн");
+      if (abs >= 1e3) return fmt(n / 1e3, "тыс.");
+      return [Math.round(n).toLocaleString("ru-RU"), ""];
+    }
+
+    function formatFull(value) {
+      if (value == null || !Number.isFinite(Number(value))) return "скрыто";
+      return Number(value).toLocaleString("ru-RU");
+    }
+
+    function scaleViews(values) {
+      const max = Math.max(0, ...values);
+      if (max >= 1e9) return { unit: "млрд просмотров", k: 1e9 };
+      if (max >= 1e6) return { unit: "млн просмотров", k: 1e6 };
+      if (max >= 1e3) return { unit: "тыс. просмотров", k: 1e3 };
+      return { unit: "просмотры", k: 1 };
+    }
+
+    function monthLabel(period) {
+      const [y, m] = period.split("-");
+      return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("ru-RU", {
+        month: "short",
+        year: "2-digit",
+      });
+    }
+
+    function kpiHtml(label, value, sub) {
+      const [num, unit] = compact(value);
+      return `
+        <div class="kpi">
+          <div class="kpi-label"><span class="dot"></span>${label}</div>
+          <div class="kpi-value">${num} <span>${unit}</span></div>
+          <div class="kpi-sub">${sub}</div>
+        </div>
+      `;
+    }
+
+    function renderKpis(data) {
+      const ch = data.channel;
+      const subs = ch.subscriber_count == null
+        ? `<div class="kpi"><div class="kpi-label"><span class="dot"></span>Подписчики</div><div class="kpi-value">скрыто</div><div class="kpi-sub">автор скрыл счётчик</div></div>`
+        : kpiHtml("Подписчики", ch.subscriber_count, formatFull(ch.subscriber_count));
+
+      document.getElementById("kpis").innerHTML = [
+        kpiHtml("Просмотры канала", data.total_views, formatFull(data.total_views)),
+        kpiHtml("Среднее на ролик", data.average_views_per_video, formatFull(Math.round(data.average_views_per_video))),
+        kpiHtml("Медиана на ролик", data.median_views_per_video, formatFull(Math.round(data.median_views_per_video))),
+        subs,
+      ].join("");
+    }
+
+    function drawChart(monthly) {
+      const ctx = document.getElementById("chart");
+      const labels = monthly.map((p) => monthLabel(p.period));
+      const values = monthly.map((p) => p.views);
+      const { unit, k } = scaleViews(values);
+      const scaled = values.map((v) => Number((v / k).toFixed(2)));
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            data: scaled,
+            borderColor: "#7c5cff",
+            backgroundColor: "transparent",
+            borderWidth: 3,
+            tension: 0.18,
+            pointRadius: monthly.length > 36 ? 0 : 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: "#7c5cff",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 3,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#1c1230",
+              titleFont: { family: "Manrope", weight: "700" },
+              bodyFont: { family: "Manrope" },
+              callbacks: {
+                label: (item) => {
+                  const i = item.dataIndex;
+                  const views = formatFull(monthly[i].views);
+                  const videos = monthly[i].videos;
+                  return `${item.formattedValue} ${unit} · ${videos} рол. · ${views}`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              border: { display: false },
+              ticks: { color: "#8a7a9e", font: { family: "Manrope", weight: "600" }, maxRotation: 0 },
+            },
+            y: {
+              beginAtZero: true,
+              border: { display: false },
+              grid: { color: "#eee7f6", borderDash: [4, 6] },
+              ticks: {
+                color: "#8a7a9e",
+                font: { family: "Manrope", weight: "600" },
+                callback: (value) => String(value).replace(".", ","),
+              },
+              title: {
+                display: true,
+                text: unit,
+                color: "#8a7a9e",
+                font: { family: "Manrope", size: 11, weight: "600" },
+                align: "start",
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function renderTops(videos) {
+      document.getElementById("tops").innerHTML = videos.map((v, i) => {
+        const date = new Date(v.published_at).toLocaleDateString("ru-RU", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+        const [num, unit] = compact(v.views);
+        return `
+          <div class="video">
+            <div class="rank">${i + 1}</div>
+            <div>
+              <a href="${v.url}" target="_blank" rel="noopener">${v.title}</a>
+              <p class="video-date">${date}</p>
+            </div>
+            <div class="video-views">${num} ${unit}</div>
+          </div>
+        `;
+      }).join("") || `<p class="hint">Роликов нет</p>`;
+    }
+
+    function render(data) {
+      const ch = data.channel;
+      emptyEl.hidden = true;
+      contentEl.hidden = false;
+      document.getElementById("channelTitle").textContent = ch.title;
+      const link = document.getElementById("channelLink");
+      link.href = ch.url;
+      link.textContent = ch.handle || "Открыть на YouTube";
+      const avatar = document.getElementById("avatar");
+      avatar.src = ch.thumbnail_url || "";
+      avatar.alt = ch.title;
+      avatar.style.display = ch.thumbnail_url ? "block" : "none";
+      document.getElementById("brand").textContent = ch.title;
+      const [num, unit] = compact(data.total_views);
+      document.getElementById("headline").textContent = `Просмотры — ${num} ${unit}`.trim();
+      renderKpis(data);
+      drawChart(data.monthly);
+      renderTops(data.top_videos);
+      if (data.truncated) {
+        noteEl.textContent = `Учтены ${data.analyzed_videos} последних роликов из ${formatFull(data.channel.video_count)}.`;
+        noteEl.style.display = "block";
+      } else {
+        noteEl.style.display = "none";
+      }
+    }
+
+    document.getElementById("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorEl.style.display = "none";
+      noteEl.style.display = "none";
+      submitEl.disabled = true;
+      try {
+        const query = document.getElementById("query").value.trim();
+        const response = await fetch(`/api/channel/stats?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || "Не удалось получить статистику");
+        }
+        render(data);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = "block";
+      } finally {
+        submitEl.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
