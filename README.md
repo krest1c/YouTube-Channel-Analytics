@@ -1,3 +1,6 @@
+<img width="1536" height="1024" alt="Minimalist GitHub Banner for YouTube API" src="https://github.com/user-attachments/assets/aa784f73-962b-4fcb-9641-21ddcc40a3f6" />
+
+
 # YouTube Channel Stats — backend
 
 FastAPI-сервис: по названию / @handle / ссылке на YouTube-канал отдаёт статистику просмотров.
